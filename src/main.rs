@@ -2,10 +2,11 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
-mod utils;
 mod commands;
+mod roles;
+mod utils;
 
-use commands::{hello, create_channel};
+use commands::{create_channel, hello};
 use utils::Data;
 
 #[shuttle_runtime::main]
@@ -22,7 +23,9 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {})
+                Ok(Data {
+                    secrets: secret_store,
+                })
             })
         })
         .build();
