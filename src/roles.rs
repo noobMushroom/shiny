@@ -1,4 +1,5 @@
-use crate::utils::Context;
+use crate::utils::{Context, Error};
+use poise::serenity_prelude::Result;
 use poise::serenity_prelude::{self as serenity, GuildId, Member, PartialGuild, Role, RoleId};
 
 pub fn get_roles<'a>(guild: &'a PartialGuild) -> Vec<&'a str> {
@@ -24,4 +25,9 @@ pub async fn is_user_allowed(
 ) -> Result<bool, serenity::prelude::SerenityError> {
     let user = ctx.author();
     Ok(user.has_role(ctx.http(), guild_id, roleid).await?)
+}
+
+pub async fn give_role(ctx: &Context<'_>, role_id: &RoleId, member: &Member) -> Result<(), Error> {
+    member.add_role(&ctx.http(), role_id).await?;
+    Ok(())
 }

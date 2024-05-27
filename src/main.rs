@@ -2,8 +2,10 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
+mod channel;
 mod commands;
 mod roles;
+mod users;
 mod utils;
 
 use commands::{create_channel, hello};
