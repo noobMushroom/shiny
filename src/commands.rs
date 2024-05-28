@@ -1,16 +1,41 @@
-use crate::channel::{channel_builder, get_channel_type};
-use crate::roles::{give_role, is_user_allowed};
-use crate::utils::{Context, Error, SecretToken};
-use poise::serenity_prelude::{Guild, Result, RoleId};
-use secrecy::ExposeSecret;
+use crate::channel::{create_and_setup_chennael, get_user_channel, handle_channel_delete};
+use crate::guilds::get_guild;
+use crate::messages::send_ephemeral_message;
+use crate::roles::{get_role_id, has_active_channel};
+use crate::utils::{Context, Error, Names};
+use anyhow::anyhow;
+use poise::serenity_prelude::Result;
 
 /// Responds with "world!"
 #[poise::command(slash_command)]
 pub async fn hello(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("world!").await?;
+    send_ephemeral_message(&ctx, "hope works").await?;
     Ok(())
 }
 
+/// deletes the channel if user have some channel
+#[poise::command(slash_command)]
+pub async fn delete_channel(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = match ctx.guild_id() {
+        Some(id) => id,
+        None => return Err(anyhow!("Guild id not found").into()),
+    };
+
+    // Role to check if user already have an active channel
+    let has_active_channel_role = get_role_id(&ctx, Names::has_active()).await?;
+
+    //Checking if user has an active channel and deleting their channel for them and removing active
+    //cahnnel role
+    if has_active_channel(&ctx, &has_active_channel_role, &guild_id).await? {
+        let channel = get_user_channel(&ctx).await?;
+        handle_channel_delete(&ctx, channel, has_active_channel_role).await?;
+    } else {
+        ctx.say("You don't have any active channels").await?;
+    }
+    Ok(())
+}
+
+/// Creates a private channel
 #[poise::command(slash_command)]
 pub async fn create_channel(
     ctx: Context<'_>,
@@ -18,20 +43,22 @@ pub async fn create_channel(
         String,
     >,
 ) -> Result<(), Error> {
-    let guild_id = ctx.guild_id().expect("failed to get guild id");
-    let guild = Guild::get(&ctx.http(), guild_id).await?;
-    let permission_roleid = SecretToken::get_token::<u64>(&ctx.data().secrets, "PERMIT_ROLE")
-        .expect("failed to get token");
-    let permission_roleid = RoleId::new(*permission_roleid.expose_secret());
-    if is_user_allowed(&ctx, &permission_roleid, &guild_id).await? {
-        ctx.say("Sanka you already have a channel go fuck yourself bitch :middle_finger:")
-            .await?;
+    let guild_id = match ctx.guild_id() {
+        Some(id) => id,
+        None => return Err(anyhow!("Guild id not found").into()),
+    };
+    let guild = get_guild(&ctx).await?;
+
+    // Role to check if user already have an active channel
+    let has_active_channel_role = get_role_id(&ctx, Names::has_active()).await?;
+
+    //Checking if user has an active channel and creating channel for them and giving them active
+    //cahnnel role
+    if has_active_channel(&ctx, &has_active_channel_role, &guild_id).await? {
+        send_ephemeral_message(&ctx, "You already have an active channel if you want new channel delete the channel first using /delete_channel command").await?;
     } else {
-        let channel_type = get_channel_type(&channel_type.unwrap_or_else(|| "text".to_string()))?;
-        let builder = channel_builder(&ctx, &channel_type, &ctx.author().name).await;
-        guild.create_channel(&ctx.http(), builder).await?;
-        let mem = guild.member(&ctx.http(), ctx.author().id).await?;
-        let _ = give_role(&ctx, &permission_roleid, &mem).await?;
+        create_and_setup_chennael(ctx, channel_type, guild, has_active_channel_role).await?;
+        send_ephemeral_message(&ctx, "Your channel is successfully created you the invitaion like is sent to your inbox you can invite people or post the link by /post comman").await?;
     }
     Ok(())
 }
