@@ -5,14 +5,16 @@ use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 mod channel;
 mod commands;
+mod encryption;
 mod event_handler;
 mod guilds;
 mod messages;
 mod roles;
-mod users;
+mod users_commands;
 mod utils;
 
-use commands::{create_channel, delete_channel, hello};
+use crate::users_commands::add;
+use commands::{create_channel, delete_channel, hello, post};
 use utils::Data;
 
 #[shuttle_runtime::main]
@@ -23,7 +25,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![hello(), delete_channel(), create_channel()],
+            commands: vec![hello(), delete_channel(), create_channel(), add(), post()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {

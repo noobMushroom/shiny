@@ -1,6 +1,3 @@
-// use anyhow::Context as _;
-// use poise::serenity_prelude as serenity;
-
 use poise::serenity_prelude::{
     PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, UserId,
 };
@@ -20,17 +17,15 @@ pub fn defualt_permissions(user_id: UserId, role_id: RoleId) -> Vec<PermissionOv
             kind: PermissionOverwriteType::Member(user_id),
         },
         PermissionOverwrite {
-            allow: Permissions::SEND_MESSAGES,
+            allow: Permissions::empty(),
             deny: Permissions::VIEW_CHANNEL,
             kind: PermissionOverwriteType::Role(role_id),
         },
     ]
 }
 
-// Helping struct to get name of different role and category (To avoid speeling error in somewhere
-// code and Later we can change what category and what roles to use) in the server for now there are only
-// three names `has active channel` to check if user has any active channel and everybody role to
-// make the channel private and category name where bot will create the private channel
+// Helping struct to get name of different roles and categories in the server(To avoid spelling error somewhere
+// in the code and Later we can change what category and what roles to use)
 pub struct Names;
 
 impl<'a> Names {
@@ -40,12 +35,27 @@ impl<'a> Names {
     }
 
     // for everybody role
-    pub fn everyboy() -> &'a str {
-        "everybody"
+    pub fn everybody() -> &'a str {
+        "@everyone"
     }
 
     // For category name
-    pub fn category() -> &'a str {
-        "PRIVATE ROOMS"
+    pub fn private_rooms_category() -> &'a str {
+        "Private Rooms"
+    }
+
+    // For the role to be able to create channel
+    pub fn can_create_channel() -> &'a str {
+        "can_create_channel"
+    }
+
+    // For the invitations category
+    pub fn invitations_category() -> &'a str {
+        "invitations"
+    }
+
+    // For the invites channel
+    pub fn invites() -> &'a str {
+        "invites"
     }
 }

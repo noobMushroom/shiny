@@ -1685,6 +1685,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "poise",
+ "rand",
+ "ring",
  "shuttle-runtime",
  "shuttle-serenity",
  "tokio",

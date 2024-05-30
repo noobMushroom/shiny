@@ -1,6 +1,6 @@
 use crate::guilds::get_guild;
-use crate::messages::send_msg;
-use crate::roles::{get_role_id, give_role, remove_role};
+use crate::messages::{send_ephemeral_message, send_msg};
+use crate::roles::{get_role_id, get_user_roles, give_role, remove_role};
 use crate::utils::{self, Context, Error, Names};
 use poise::serenity_prelude::{
     ChannelId, ChannelType, CreateChannel, CreateInvite, GuildChannel, PartialGuild, Result,
@@ -23,11 +23,11 @@ pub async fn channel_builder<'a>(
     channel_type: &ChannelType,
     channel_name: &str,
 ) -> Result<CreateChannel<'a>, Error> {
-    // Category Id unser which user want to create private channel
-    let category_id = get_category_id(ctx, Names::category()).await?;
+    // Category Id under which user want to create private channel
+    let category_id = get_category_id(ctx, Names::private_rooms_category()).await?;
 
     // Everybody role in the server id
-    let everybody_role_id = get_role_id(ctx, Names::everyboy()).await?;
+    let everybody_role_id = get_role_id(ctx, Names::everybody()).await?;
 
     // Id of the users to give them permissions
     let user_id = UserId::new(ctx.author().id.into());
@@ -43,6 +43,7 @@ pub async fn channel_builder<'a>(
 }
 
 // Creating a invite link for the channel
+#[allow(unused)]
 pub async fn get_invite_link(
     ctx: &Context<'_>,
     channel: GuildChannel,
@@ -59,7 +60,7 @@ pub async fn create_and_setup_chennael(
     guild: PartialGuild,
     has_active_channel: RoleId,
 ) -> Result<(), Error> {
-    // Getting the channel type and if user give wrong input or don't input anything creating a
+    // Getting the channel type and if user gives wrong input or don't input anything creating a
     // text channel
     let channel_type = get_channel_type(&channel_type.unwrap_or_else(|| "text".to_string()))?;
 
@@ -73,9 +74,7 @@ pub async fn create_and_setup_chennael(
     let mem = guild.member(&ctx, ctx.author().id).await?;
     give_role(&ctx, &has_active_channel, &mem).await?;
 
-    // Creating the invite and sending it to user's dm
-    let invite = get_invite_link(&ctx, channel).await?;
-    send_msg(&ctx, "invite link of channel", &invite.url()).await?;
+    send_msg(&ctx, "Invite token of channel", &channel.id.to_string()).await?;
     Ok(())
 }
 
@@ -87,7 +86,7 @@ pub async fn get_user_channel(ctx: &Context<'_>) -> Result<GuildChannel, Error> 
     let all_channels = guild.channels(&ctx).await?;
 
     // Getting category id to filter the channel
-    let category_id = get_category_id(ctx, Names::category()).await?;
+    let category_id = get_category_id(ctx, Names::private_rooms_category()).await?;
 
     // Filtering the channel with users name
     let channel_opt = all_channels.values().find(|channel| {
@@ -123,5 +122,59 @@ pub async fn get_category_id(ctx: &Context<'_>, category_name: &str) -> Result<C
     match category {
         Some(cat) => Ok(cat.clone().id),
         None => Err("Failed to find category".into()),
+    }
+}
+
+// Checking if the user have can create channel role
+pub async fn can_create_channel(ctx: &Context<'_>) -> Result<bool, Error> {
+    let guild = get_guild(&ctx).await?;
+    let member = guild.member(ctx, ctx.author().id).await?;
+    let roles = get_user_roles(ctx, &member)?;
+    Ok(roles.iter().any(|v| v.name == Names::can_create_channel()))
+}
+
+pub async fn get_channel_by_id(
+    ctx: &Context<'_>,
+    channel_id: &ChannelId,
+) -> Result<GuildChannel, Error> {
+    let guild = get_guild(&ctx).await?;
+    let all_channles = guild.channels(ctx).await?;
+
+    let channel = all_channles
+        .values()
+        .find(|channel| channel.id == *channel_id);
+
+    if let Some(v) = channel {
+        Ok(v.clone())
+    } else {
+        send_ephemeral_message(
+            ctx,
+            "Failed to find channel with this token recheck the token",
+        )
+        .await?;
+        Err("Failed to find channel".into())
+    }
+}
+
+pub async fn get_channel_by_name(
+    ctx: &Context<'_>,
+    channel_name: &str,
+) -> Result<GuildChannel, Error> {
+    let guild = get_guild(&ctx).await?;
+    let all_channles = guild.channels(ctx).await?;
+
+    let channel = all_channles
+        .values()
+        .find(|channel| *channel_name == channel.name);
+
+    if let Some(v) = channel {
+        Ok(v.clone())
+    } else {
+        send_ephemeral_message(
+            ctx,
+            "Failed to find channel with this token recheck the token",
+        )
+        .await?;
+        Err("Failed to find channel".into())
     }
 }
