@@ -1,20 +1,21 @@
 use crate::guilds::get_guild;
 use crate::messages::{send_ephemeral_message, send_msg};
-use crate::roles::{get_role_id, get_user_roles, give_role, remove_role};
+use crate::roles::{get_role_id, get_user_roles};
 use crate::utils::{self, Context, Error, Names};
+use anyhow::anyhow;
 use poise::serenity_prelude::{
     ChannelId, ChannelType, CreateChannel, CreateInvite, GuildChannel, PartialGuild, Result,
     RichInvite, RoleId, UserId,
 };
 
 // Returns the channel type based on the input of user
-pub fn get_channel_type(channel: &str) -> Result<ChannelType, String> {
+pub fn get_channel_type(channel: &str) -> Result<ChannelType, Error> {
     let channel = channel.to_lowercase();
     match channel.as_str() {
         "text" => Ok(ChannelType::Text),
         "voice" => Ok(ChannelType::Voice),
         "video" => Ok(ChannelType::Stage),
-        _ => Err("Wrong input".to_string()),
+        _ => Err(anyhow!("Wrong input").into()),
     }
 }
 
@@ -72,7 +73,7 @@ pub async fn create_and_setup_chennael(
 
     // Getting member to give role of has active channel
     let mem = guild.member(&ctx, ctx.author().id).await?;
-    give_role(&ctx, &has_active_channel, &mem).await?;
+    mem.add_role(ctx, &has_active_channel).await?;
 
     send_msg(&ctx, "Invite token of channel", &channel.id.to_string()).await?;
     Ok(())
@@ -93,9 +94,10 @@ pub async fn get_user_channel(ctx: &Context<'_>) -> Result<GuildChannel, Error> 
         channel.parent_id == Some(category_id) && channel.name == ctx.author().name
     });
 
-    Ok(channel_opt
-        .cloned()
-        .ok_or_else(|| anyhow::anyhow!("Channel not found"))?)
+    match channel_opt {
+        Some(channel) => Ok(channel.clone()),
+        None => Err(anyhow!("User channel not found").into()),
+    }
 }
 
 // Deleting the user channel and removing has active channel role from them
@@ -107,7 +109,7 @@ pub async fn handle_channel_delete(
     let _ = channel.delete(ctx).await?;
     let guild = get_guild(ctx).await?;
     let member = guild.member(ctx, ctx.author().id).await?;
-    remove_role(ctx, &role_id, &member).await?;
+    member.remove_role(ctx, role_id).await?;
     Ok(())
 }
 
@@ -121,7 +123,7 @@ pub async fn get_category_id(ctx: &Context<'_>, category_name: &str) -> Result<C
 
     match category {
         Some(cat) => Ok(cat.clone().id),
-        None => Err("Failed to find category".into()),
+        None => Err(anyhow!("Failed to find category").into()),
     }
 }
 
@@ -133,48 +135,37 @@ pub async fn can_create_channel(ctx: &Context<'_>) -> Result<bool, Error> {
     Ok(roles.iter().any(|v| v.name == Names::can_create_channel()))
 }
 
-pub async fn get_channel_by_id(
-    ctx: &Context<'_>,
-    channel_id: &ChannelId,
-) -> Result<GuildChannel, Error> {
-    let guild = get_guild(&ctx).await?;
-    let all_channles = guild.channels(ctx).await?;
+pub trait ChannelProperty {
+    fn matches(&self, channel: &GuildChannel) -> bool;
+}
 
-    let channel = all_channles
-        .values()
-        .find(|channel| channel.id == *channel_id);
-
-    if let Some(v) = channel {
-        Ok(v.clone())
-    } else {
-        send_ephemeral_message(
-            ctx,
-            "Failed to find channel with this token recheck the token",
-        )
-        .await?;
-        Err("Failed to find channel".into())
+impl ChannelProperty for &str {
+    fn matches(&self, channel: &GuildChannel) -> bool {
+        &channel.name == self
     }
 }
 
-pub async fn get_channel_by_name(
+impl ChannelProperty for &ChannelId {
+    fn matches(&self, channel: &GuildChannel) -> bool {
+        &channel.id == *self
+    }
+}
+
+pub async fn get_channel<P: ChannelProperty>(
     ctx: &Context<'_>,
-    channel_name: &str,
+    property: P,
 ) -> Result<GuildChannel, Error> {
     let guild = get_guild(&ctx).await?;
     let all_channles = guild.channels(ctx).await?;
 
     let channel = all_channles
         .values()
-        .find(|channel| *channel_name == channel.name);
+        .find(|channel| property.matches(channel));
 
     if let Some(v) = channel {
         Ok(v.clone())
     } else {
-        send_ephemeral_message(
-            ctx,
-            "Failed to find channel with this token recheck the token",
-        )
-        .await?;
-        Err("Failed to find channel".into())
+        send_ephemeral_message(ctx, "Failed to find channel").await?;
+        Err(anyhow!("Failed to find channel").into())
     }
 }

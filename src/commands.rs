@@ -1,5 +1,5 @@
 use crate::channel::{
-    can_create_channel, create_and_setup_chennael, get_channel_by_name, get_user_channel,
+    can_create_channel, create_and_setup_chennael, get_channel, get_user_channel,
     handle_channel_delete,
 };
 use crate::guilds::get_guild;
@@ -19,10 +19,9 @@ pub async fn hello(ctx: Context<'_>) -> Result<(), Error> {
 /// deletes the channel if user have some channel
 #[poise::command(slash_command)]
 pub async fn delete_channel(ctx: Context<'_>) -> Result<(), Error> {
-    let guild_id = match ctx.guild_id() {
-        Some(id) => id,
-        None => return Err(anyhow!("Guild id not found").into()),
-    };
+    let guild_id = ctx
+        .guild_id()
+        .ok_or_else(|| anyhow!("failed to get guild"))?;
 
     // Role to check if user already have an active channel
     let has_active_channel_role = get_role_id(&ctx, Names::has_active()).await?;
@@ -32,9 +31,14 @@ pub async fn delete_channel(ctx: Context<'_>) -> Result<(), Error> {
     if has_active_channel(&ctx, &has_active_channel_role, &guild_id).await? {
         let channel = get_user_channel(&ctx).await?;
         handle_channel_delete(&ctx, channel, has_active_channel_role).await?;
-        send_ephemeral_message(&ctx, "Your channel is successfully deleted").await?;
+        send_ephemeral_message(&ctx, "Your channel has been deleted successfully").await?;
     } else {
-        send_ephemeral_message(&ctx, "You don't have any active channel you can create channel by using /create_channel command").await?;
+        send_ephemeral_message(
+            &ctx,
+            "You don't have any active channel \
+            you can create channel by using /create_channel command",
+        )
+        .await?;
     }
     Ok(())
 }
@@ -73,7 +77,7 @@ pub async fn post(
     //channel role
     if has_active_channel(&ctx, &has_active_channel_role, &guild_id).await? {
         let channel = get_user_channel(&ctx).await?;
-        let invites_channel = get_channel_by_name(&ctx, Names::invites()).await?;
+        let invites_channel = get_channel(&ctx, Names::invites()).await?;
         post_invite(
             &ctx,
             &title,
@@ -84,7 +88,12 @@ pub async fn post(
         .await?;
         send_ephemeral_message(&ctx, "Your invite has been posted in the invite channel").await?;
     } else {
-        send_ephemeral_message(&ctx, "You don't have any active channel you can create channel by using /create_channel command").await?;
+        send_ephemeral_message(
+            &ctx,
+            "You don't have any active channel \
+            you can create channel by using /create_channel command",
+        )
+        .await?;
     }
     Ok(())
 }
@@ -109,10 +118,16 @@ pub async fn create_channel(
         //Checking if user has an active channel and creating channel for them and giving them active
         //cahnnel role
         if has_active_channel(&ctx, &has_active_channel_role, &guild_id).await? {
-            send_ephemeral_message(&ctx, "You already have an active channel if you want new channel delete the channel first using /delete_channel command").await?;
+            send_ephemeral_message(
+                &ctx,
+                "You already have an active channel if you want new channel delete your active\
+                channel first using /delete_channel command",
+            )
+            .await?;
         } else {
             create_and_setup_chennael(ctx, channel_type, guild, has_active_channel_role).await?;
-            send_ephemeral_message(&ctx, "Your channel is successfully created. The token  is sent to your inbox you can invite people or post the token by /post command").await?;
+            send_ephemeral_message(&ctx, "Your channel is successfully created. \
+                The token  is sent to your inbox you can invite people or post the token by /post command").await?;
         }
     } else {
         send_ephemeral_message(&ctx, "You don't have permission to create channel").await?;
