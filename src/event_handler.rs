@@ -107,16 +107,20 @@ pub async fn create_channel(
             .any(|v| v.kind == ChannelType::Category && v.name == category_name)
         {
             if let Ok(channel) = guild.channels(&ctx).await {
-                if let Some(categeory_id) = channel
+                if let Some(category_id) = channel
                     .values()
                     .find(|v| v.kind == ChannelType::Category && v.name == category_name)
                 {
-                    let builder = CreateChannel::new(name)
-                        .kind(ChannelType::Text)
-                        .permissions(perms.clone())
-                        .category(categeory_id.id);
-                    if let Err(e) = guild.create_channel(&ctx.http, builder).await {
-                        println!("Failed to create channel {}", e);
+                    if !channels.values().any(|channel| {
+                        channel.name == name && channel.parent_id == Some(category_id.id)
+                    }) {
+                        let builder = CreateChannel::new(name)
+                            .kind(ChannelType::Text)
+                            .permissions(perms.clone())
+                            .category(category_id.id);
+                        if let Err(e) = guild.create_channel(&ctx.http, builder).await {
+                            println!("Failed to create channel {}", e);
+                        }
                     }
                 }
             }
