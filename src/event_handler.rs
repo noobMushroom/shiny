@@ -102,7 +102,7 @@ pub async fn create_channel(
     perms: &Vec<PermissionOverwrite>,
 ) {
     if let Ok(channels) = guild.channels(&ctx).await {
-        if !channels
+        if channels
             .values()
             .any(|v| v.kind == ChannelType::Category && v.name == category_name)
         {
