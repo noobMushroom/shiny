@@ -1,7 +1,7 @@
 use crate::guilds::get_guild;
-use crate::utils::{Context, Error};
+use crate::utils::{Context, Error, Names};
 use anyhow::anyhow;
-use poise::serenity_prelude::{GuildId, Member, PartialGuild, Role, RoleId};
+use poise::serenity_prelude::{Guild, GuildId, Member, PartialGuild, Role, RoleId};
 
 #[allow(unused)]
 pub fn get_roles<'a>(guild: &'a PartialGuild) -> Vec<&'a str> {
@@ -35,4 +35,13 @@ pub async fn get_role_id(ctx: &Context<'_>, role_name: &str) -> Result<RoleId, E
         .find(|role| role.name == role_name)
         .map(|role| role.id)
         .ok_or_else(|| anyhow!("Failed to find role").into())
+}
+
+pub fn get_everyone_id(guild: &Guild) -> Role {
+    guild
+        .roles
+        .values()
+        .find(|val| val.name == Names::everyone_role())
+        .unwrap()
+        .clone()
 }

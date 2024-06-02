@@ -29,9 +29,7 @@ pub async fn post_invite(
 ) -> Result<(), Error> {
     let message = format!("**Channel Token: {}**", channel_token.to_string());
     let embed = CreateEmbed::new().title(title).description(description);
-    let builder = CreateMessage::new()
-        .content(message)
-        .embed(embed);
+    let builder = CreateMessage::new().content(message).embed(embed);
     channel.send_message(ctx, builder).await?;
 
     Ok(())

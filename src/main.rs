@@ -3,6 +3,7 @@ use anyhow::Context as _;
 use poise::serenity_prelude as serenity;
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
+mod automation;
 mod channel;
 mod commands;
 mod encryption;

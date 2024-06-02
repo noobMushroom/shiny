@@ -1,6 +1,6 @@
 use crate::guilds::get_guild;
 use crate::messages::{send_ephemeral_message, send_msg};
-use crate::roles::{get_role_id, get_user_roles};
+use crate::roles::{ get_role_id, get_user_roles};
 use crate::utils::{self, Context, Error, Names};
 use anyhow::anyhow;
 use poise::serenity_prelude::{
@@ -27,14 +27,13 @@ pub async fn channel_builder<'a>(
     // Category Id under which user want to create private channel
     let category_id = get_category_id(ctx, Names::private_rooms_category()).await?;
 
-    // Everybody role in the server id
-    let everybody_role_id = get_role_id(ctx, Names::everybody()).await?;
+    let everyone_role = get_role_id(&ctx, Names::everyone_role()).await?;
 
     // Id of the users to give them permissions
     let user_id = UserId::new(ctx.author().id.into());
 
     // Getting default permissions
-    let permissions = utils::defualt_permissions(user_id, everybody_role_id);
+    let permissions = utils::defualt_permissions(user_id, everyone_role);
 
     Ok(CreateChannel::new(channel_name)
         .category(category_id)

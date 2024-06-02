@@ -12,8 +12,10 @@ pub fn defualt_permissions(user_id: UserId, role_id: RoleId) -> Vec<PermissionOv
             allow: Permissions::VIEW_CHANNEL
                 | Permissions::SEND_MESSAGES
                 | Permissions::ATTACH_FILES
-                | Permissions::MANAGE_MESSAGES,
-            deny: Permissions::CHANGE_NICKNAME | Permissions::CREATE_INSTANT_INVITE,
+                | Permissions::MANAGE_MESSAGES
+                | Permissions::MANAGE_NICKNAMES
+                | Permissions::CHANGE_NICKNAME,
+            deny: Permissions::CREATE_INSTANT_INVITE,
             kind: PermissionOverwriteType::Member(user_id),
         },
         PermissionOverwrite {
@@ -22,6 +24,22 @@ pub fn defualt_permissions(user_id: UserId, role_id: RoleId) -> Vec<PermissionOv
             kind: PermissionOverwriteType::Role(role_id),
         },
     ]
+}
+
+pub fn defualt_permissions_invites(role_id: RoleId) -> Vec<PermissionOverwrite> {
+    vec![PermissionOverwrite {
+        allow: Permissions::VIEW_CHANNEL,
+        deny: Permissions::SEND_MESSAGES | Permissions::CREATE_INSTANT_INVITE,
+        kind: PermissionOverwriteType::Role(role_id),
+    }]
+}
+
+pub fn defualt_permissions_pvt_rooms(role_id: RoleId) -> Vec<PermissionOverwrite> {
+    vec![PermissionOverwrite {
+        allow: Permissions::empty(),
+        deny: Permissions::all(),
+        kind: PermissionOverwriteType::Role(role_id),
+    }]
 }
 
 // Helping struct to get name of different roles and categories in the server(To avoid spelling error somewhere
@@ -34,11 +52,6 @@ impl<'a> Names {
         "has_active_channel"
     }
 
-    // for everybody role
-    pub fn everybody() -> &'a str {
-        "@everyone"
-    }
-
     // For category name
     pub fn private_rooms_category() -> &'a str {
         "Private Rooms"
@@ -47,6 +60,11 @@ impl<'a> Names {
     // For the role to be able to create channel
     pub fn can_create_channel() -> &'a str {
         "can_create_channel"
+    }
+
+    //Everyone role
+    pub fn everyone_role() -> &'a str {
+        "@everyone"
     }
 
     // For the invitations category

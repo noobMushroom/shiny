@@ -15,7 +15,7 @@ use poise::serenity_prelude::Result;
 #[poise::command(slash_command)]
 pub async fn add(
     ctx: Context<'_>,
-    #[description = "type of channel [options: text voice video(stage)]"] token: String,
+    #[description = "The token of the channel that you want to join"] token: String,
 ) -> Result<(), Error> {
     let allow = Permissions::VIEW_CHANNEL | Permissions::SEND_MESSAGES | Permissions::ATTACH_FILES;
     let deny = Permissions::empty();
@@ -38,3 +38,27 @@ pub async fn add(
     send_ephemeral_message(&ctx, &message).await?;
     Ok(())
 }
+
+//TODO
+/* #[allow(unused)]
+#[poise::command(slash_command)]
+pub async fn add_user(
+    ctx: Context<'_>,
+    #[description = "The user you want to add example: @user1, @user2, @user3"] users: String,
+    #[description = "What does you want to tell them"] message: String,
+) -> Result<(), Error> {
+    let guild = get_guild(&ctx).await?;
+    let user_channel = get_user_channel(&ctx).await?;
+
+    let users: Vec<String> = users
+        .split(',')
+        .map(|v| v.to_string())
+        .collect::<Vec<String>>();
+
+    for user in users {
+        let members = guild.search_members(&ctx, &user, Some(1)).await?;
+        for member in members {}
+    }
+
+    Ok(())
+} */
