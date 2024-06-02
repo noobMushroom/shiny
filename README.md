@@ -1,6 +1,6 @@
 # Shiny
 
-It's a Discord bot written in rust lang using [poise framework](https://docs.rs/poise/latest/poise/index.html). It can create channels, delete channels.
+It's a Discord bot written in rust lang using [poise framework](https://docs.rs/poise/latest/poise/index.html). It can create channels, delete channels. You can test this bot by using it in your server [bot link](https://discord.com/oauth2/authorize?client_id=1243906255425110098&permissions=8&scope=bot)
 
 #### Functions 
 
