@@ -1,6 +1,6 @@
 use crate::guilds::get_guild;
 use crate::messages::{send_ephemeral_message, send_msg};
-use crate::roles::{ get_role_id, get_user_roles};
+use crate::roles::{get_role_id, get_user_roles};
 use crate::utils::{self, Context, Error, Names};
 use anyhow::anyhow;
 use poise::serenity_prelude::{
@@ -90,7 +90,8 @@ pub async fn get_user_channel(ctx: &Context<'_>) -> Result<GuildChannel, Error> 
 
     // Filtering the channel with users name
     let channel_opt = all_channels.values().find(|channel| {
-        channel.parent_id == Some(category_id) && channel.name == ctx.author().name
+        channel.parent_id == Some(category_id)
+            && channel.name.to_string() == ctx.author().name.to_string()
     });
 
     match channel_opt {
